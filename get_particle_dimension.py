@@ -114,4 +114,4 @@ for c in cnts:
 	cv2.waitKey(0)
 	
 
-	#Call python get_particle_dimension.py --image images/example_01.png --width 0.955
+	#Call python get_particle_dimension.py --image images/sample_test.jpg --width 20
