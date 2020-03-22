@@ -7,19 +7,11 @@ import numpy as np
 import argparse
 import imutils
 import cv2
-import matplotlib.pyplot as plt
+import sys
+from matplotlib import pyplot as plt
 
 def midpoint(ptA, ptB):
 	return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
-
-def drawHistogram(dataSet):
-	print(int(round(max(dataSet))))
-	plt.hist(dataSet, int(round(max(dataSet))))
-	plt.xlabel('Value',fontsize=15)
-	plt.ylabel('Frequency',fontsize=15)
-	plt.figure(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
-	plt.show()
-
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -34,11 +26,42 @@ image = cv2.imread(args["image"])
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
+
 # perform edge detection, then perform a dilation + erosion to
-# close gaps in between object edges
+# close gaps in between object edges0
 edged = cv2.Canny(gray, 50, 100)
+cv2.imshow("edged", edged)
 edged = cv2.dilate(edged, None, iterations=1)
+cv2.imshow("dilate", edged)
 edged = cv2.erode(edged, None, iterations=1)
+ret,thresh1 = cv2.threshold(gray, 100, 255,cv2.THRESH_BINARY)
+
+cv2.imshow("thresh1", thresh1)
+
+# Convert BGR to HSV
+hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+plt.imshow(hsv)
+plt.show()
+
+
+print(hsv)
+
+
+# define range of blue color in HSV
+lower_blue = np.array([71,4,47])
+upper_blue = np.array([71,4,89])
+
+# Threshold the HSV image to get only blue colors
+mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+# cv2.imshow("erode", edged)0
+# cv2.imshow("image", image)
+cv2.imshow("mask", mask)
+# cv2.imshow("edged", edged)
+
+cv2.waitKey(0)
+
+sys.exit()
 
 # find contours in the edge map
 cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
@@ -50,18 +73,11 @@ cnts = imutils.grab_contours(cnts)
 (cnts, _) = contours.sort_contours(cnts)
 pixelsPerMetric = None
 
-dataSet = []
 # loop over the contours individually
 for c in cnts:
 	# if the contour is not sufficiently large, ignore it
-	cntrArea = cv2.contourArea(c)
-	# if cntrArea < 10:
-	# 	continue
-	
-	showContr = cv2.drawContours(gray, c, -1, (0,255,0), 3)
-	cv2.destroyAllWindows()
-	cv2.imshow("Contour with Area " + str(cntrArea) , showContr)
-	cv2.waitKey(0)
+	if cv2.contourArea(c) < 100:
+		continue
 
 	# compute the rotated bounding box of the contour
 	orig = image.copy()
@@ -125,14 +141,10 @@ for c in cnts:
 	cv2.putText(orig, "{:.1f} nm".format(dimB),
 		(int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
 		0.65, (255, 255, 255), 2)
+
+	# show the output image
+	cv2.imshow("Image", orig)
+	cv2.waitKey(0)
 	
 
-	# Find mean
-	mean = (dimA + dimB) / 2
-	dataSet.append(mean)
-
-#Draw histogram
-drawHistogram(dataSet)
-	
-
-#Call python get_particle_distribution_histogram.py --image images/sample_test.jpg --width 20
+	#Call python get_particle_dimension.py --image images/sample_test.jpg --width 20
